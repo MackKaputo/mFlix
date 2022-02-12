@@ -28,10 +28,13 @@ export default class MoviesDAO {
   static async getConfiguration() {
     const roleInfo = await mflix.command({ connectionStatus: 1 })
     const authInfo = roleInfo.authInfo.authenticatedUserRoles[0]
-    const { poolSize, wtimeout } = movies.s.db.serverConfig.s.options
+    console.log(`MY LOG IS EXACTLY: `,  movies.s)
+    // const { poolSize, wtimeout } = movies.s.db.serverConfig.s.options
+    //! poolSize is deprecated, wtimeout is not present in the new driver either
+    const { maxPoolSize, wtimeoutMS } = movies.s.db.s.client.topology.s.options
     let response = {
-      poolSize,
-      wtimeout,
+      poolSize: maxPoolSize,
+      wtimeout: wtimeoutMS,
       authInfo,
     }
     return response
@@ -330,6 +333,13 @@ export default class MoviesDAO {
       */
 
       // TODO Ticket: Error Handling
+      // here's how the InvalidId error is identified and handled
+      if (e.toString().startsWith(
+            "BSONTypeError: Argument passed in must be a string of 12 bytes or a string of 24 hex characters",
+          )
+      ) {
+        return null
+      }
       // Catch the InvalidId error by string matching, and then handle it.
       console.error(`Something went wrong in getMovieByID: ${e}`)
       throw e
